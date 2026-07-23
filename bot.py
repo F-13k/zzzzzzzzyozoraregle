@@ -1,0 +1,101 @@
+import os
+import discord
+from discord.ext import commands
+from discord.ui import Button, View
+from flask import Flask
+from threading import Thread
+
+# --- SERVEUR WEB POUR RENDER ---
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Le bot de règlement est en ligne !"
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+
+# --- CONFIGURATION DU BOT DISCORD ---
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+class ReglementView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="J'accepte le règlement", style=discord.ButtonStyle.green, custom_id="accept_rules")
+    async def accept_callback(self, interaction: discord.Interaction, button: Button):
+        # Remplace "Membre" par le nom exact du rôle à donner
+        role_name = "Membre" 
+        role = discord.utils.get(interaction.guild.roles, name=role_name)
+        
+        if role:
+            await interaction.user.add_roles(role)
+            await interaction.response.send_message("Merci ! Tu as accès au serveur.", ephemeral=True)
+        else:
+            await interaction.response.send_message(f"Erreur : Le rôle '{role_name}' est introuvable sur le serveur.", ephemeral=True)
+
+@bot.event
+async def on_ready():
+    print(f"Connecté en tant que {bot.user}")
+    bot.add_view(ReglementView())
+    
+    # Envoi automatique du règlement dans ton salon avec son ID
+    channel_id = 1529648927333286034
+    channel = bot.get_channel(channel_id)
+    if channel:
+        # Vérifie si le message n'a pas déjà été envoyé pour éviter les doublons
+        async for message in channel.history(limit=5):
+            if message.author == bot.user:
+                return # Un message du bot existe déjà
+                
+        embed = discord.Embed(
+            title="🌸 RÈGLEMENT OFFICIEL DE YOZORA 🌸",
+            description="Bienvenue sur Yozora ! Pour que notre communauté reste un espace chaleureux, sécurisé et agréable pour tout le monde, nous vous demandons de lire et de respecter les règles ci-dessous.
+
+📌 Section 1 : Le Respect d'Autrui
+Courtoisie obligatoire : Le respect mutuel est la base de Yozora. Aucune insulte, attaque personnelle, harcèlement, sexisme, racisme ou discrimination sous toutes ses formes ne sera toléré.
+
+Tolérance zéro : Les propos haineux, menaces ou incitations à la violence entraîneront un bannissement immédiat et définitif du serveur.
+
+Vie privée : Il est strictement interdit de divulguer des informations personnelles (doxxing) sur un membre ou un tiers sans son accord explicite.
+
+💬 Section 2 : Les Salons et la Communication
+Bon salon, bon sujet : Veillez à poster vos messages dans les salons appropriés (par exemple, les discussions générales dans le salon principal, les mémos dans les salons dédiés, etc.).
+
+Anti-spam : Le spam, le flood, l'utilisation excessive de majuscules (caps lock) ou de caractères spéciaux pour attirer l'attention sont interdits.
+
+Contenus inappropriés (NSFW) : Yozora est un espace tout public. Aucun contenu à caractère pornographique, gore, choquant ou violent (textes, images, liens ou avatars) n'est toléré.
+
+📢 Section 3 : Publicité et Liens
+Publicité non autorisée : Il est interdit de faire de la publicité pour d'autres serveurs Discord, des réseaux sociaux personnels ou des sites commerciaux dans les salons publics ou en message privé (MP) aux membres.
+
+Partenariats : Pour toute demande de partenariat avec Yozora, veuillez contacter directement la modération ou les fondateurs.
+
+🛠️ Section 4 : Modération et Sanctions
+Décision des modérateurs : L'équipe de Yozora (Modérateurs et Administrateurs) est là pour veiller au bon fonctionnement du serveur. Leurs décisions sont finales.
+
+Sanctions progressives : En cas de non-respect du règlement, vous risquez selon la gravité :
+
+Un avertissement (verbal ou officiel).
+
+Une mise en sourdine (mute) temporaire.
+
+Un expulsion (kick) ou un bannissement (ban) définitif.
+
+En cliquant sur le bouton d'acceptation ci-dessous, vous certifiez avoir lu, compris et accepté de respecter l'intégralité de ce règlement sur Yozora 🌸.",
+            color=discord.Color.pink()
+        )
+        view = ReglementView()
+        await channel.send(embed=embed, view=view)
+
+keep_alive()
+TOKEN = os.getenv("DISCORD_TOKEN")
+bot.run(TOKEN)
