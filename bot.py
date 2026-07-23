@@ -32,23 +32,26 @@ class ReglementView(View):
 
     @discord.ui.button(label="J'accepte le règlement", style=discord.ButtonStyle.green, custom_id="accept_rules")
     async def accept_callback(self, interaction: discord.Interaction, button: Button):
-        role_name = "Membre" 
-        role = discord.utils.get(interaction.guild.roles, name=role_name)
+        # Utilisation directe de l'ID de ton rôle
+        role_id = 1529660423379484793
+        role = interaction.guild.get_role(role_id)
         
         if role:
             await interaction.user.add_roles(role)
             await interaction.response.send_message("Merci ! Tu as accès au serveur.", ephemeral=True)
         else:
-            await interaction.response.send_message(f"Erreur : Le rôle '{role_name}' est introuvable sur le serveur.", ephemeral=True)
+            await interaction.response.send_message("Erreur : Le rôle est introuvable sur le serveur.", ephemeral=True)
 
 @bot.event
 async def on_ready():
     print(f"Connecté en tant que {bot.user}")
     bot.add_view(ReglementView())
     
+    # ID de ton salon règlement
     channel_id = 1529648927333286034
     channel = bot.get_channel(channel_id)
     if channel:
+        # Vérifie si le message n'a pas déjà été envoyé pour éviter les doublons
         async for message in channel.history(limit=5):
             if message.author == bot.user:
                 return
