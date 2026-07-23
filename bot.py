@@ -78,14 +78,8 @@ async def createreglement(ctx):
     )
     view = ReglementView()
     await ctx.send(embed=embed, view=view)
-    await ctx.message.delete() # Supprime ta commande pour faire propre
+    await ctx.message.delete()
 
 keep_alive()
 TOKEN = os.getenv("DISCORD_TOKEN")
 bot.run(TOKEN)
-```[cite: 1]
-
-### Comment l'utiliser une fois en ligne :
-1. Va dans ton salon `#reglement` sur ton serveur Discord.
-2. Tape simplement la commande : **`!createreglement`**
-3. Le bot va poster le message complet avec toutes les règles et le bouton vert, tout en supprimant ton message de commande pour que ce soit propre !
